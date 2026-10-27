@@ -2981,6 +2981,7 @@ msgstr "La saisie d’images n’est pas configurée pour ce modèle."
 msgid "Image upload area"
 msgstr "Zone de téléchargement d'image"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 msgid "Import"
@@ -2999,6 +3000,10 @@ msgstr "Importer OpenAPI JSON"
 #: src/pages/shell/composer.tsx
 msgid "Import this agent as a bot?"
 msgstr "Importer cet agent comme bot ?"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Importing…"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "In progress"
@@ -3873,6 +3878,7 @@ msgstr "Compétence non valide"
 msgid "Not checked yet"
 msgstr "Pas encore vérifié"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Not imported"
 msgstr "Non importé"

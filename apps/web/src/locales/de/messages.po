@@ -2981,6 +2981,7 @@ msgstr "Bildeingabe ist für dieses Modell nicht konfiguriert."
 msgid "Image upload area"
 msgstr "Bild-Upload-Bereich"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 msgid "Import"
@@ -2999,6 +3000,10 @@ msgstr "OpenAPI-JSON importieren"
 #: src/pages/shell/composer.tsx
 msgid "Import this agent as a bot?"
 msgstr "Diesen Agenten als Bot importieren?"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Importing…"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "In progress"
@@ -3873,6 +3878,7 @@ msgstr "Kein gültiger Skill"
 msgid "Not checked yet"
 msgstr "Noch nicht geprüft"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Not imported"
 msgstr "Nicht importiert"

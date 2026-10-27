@@ -2982,6 +2982,7 @@ msgstr "此模型尚未設定圖片輸入。"
 msgid "Image upload area"
 msgstr "圖片上傳區域"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 msgid "Import"
@@ -3000,6 +3001,10 @@ msgstr "匯入 OpenAPI JSON"
 #: src/pages/shell/composer.tsx
 msgid "Import this agent as a bot?"
 msgstr "要將此代理程式匯入為機器人嗎？"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Importing…"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "In progress"
@@ -3874,6 +3879,7 @@ msgstr "不是有效的技能"
 msgid "Not checked yet"
 msgstr "尚未檢查"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Not imported"
 msgstr "未匯入"

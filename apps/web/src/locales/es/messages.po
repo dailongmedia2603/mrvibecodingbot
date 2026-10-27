@@ -2981,6 +2981,7 @@ msgstr "La entrada de imágenes no está configurada para este modelo."
 msgid "Image upload area"
 msgstr "Área de carga de imagen"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 msgid "Import"
@@ -2999,6 +3000,10 @@ msgstr "Importar JSON de OpenAPI"
 #: src/pages/shell/composer.tsx
 msgid "Import this agent as a bot?"
 msgstr "¿Importar este agente como bot?"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Importing…"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "In progress"
@@ -3873,6 +3878,7 @@ msgstr "No es una habilidad válida"
 msgid "Not checked yet"
 msgstr "Aún no comprobado"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Not imported"
 msgstr "No importado"

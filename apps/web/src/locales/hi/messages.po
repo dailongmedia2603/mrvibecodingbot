@@ -2981,6 +2981,7 @@ msgstr "इस मॉडल के लिए चित्र इनपुट क
 msgid "Image upload area"
 msgstr "छवि अपलोड क्षेत्र"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/create-bot-dialog.tsx
 msgid "Import"
@@ -2999,6 +3000,10 @@ msgstr "OpenAPI JSON इम्पोर्ट करें"
 #: src/pages/shell/composer.tsx
 msgid "Import this agent as a bot?"
 msgstr "इस एजेंट को बॉट के रूप में इंपोर्ट करें?"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Importing…"
+msgstr ""
 
 #: src/lib/ticket-status.ts
 msgid "In progress"
@@ -3873,6 +3878,7 @@ msgstr "मान्य स्किल नहीं"
 msgid "Not checked yet"
 msgstr "अभी तक जाँच नहीं हुई"
 
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Not imported"
 msgstr "इंपोर्ट नहीं हुआ"

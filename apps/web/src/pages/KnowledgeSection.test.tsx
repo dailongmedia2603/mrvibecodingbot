@@ -8,7 +8,7 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
 
-const api = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), get: vi.fn() }));
+const api = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), get: vi.fn(), update: vi.fn() }));
 const memoryApi = vi.hoisted(() => ({
   list: vi.fn(async () => []),
   remove: vi.fn(),
@@ -418,6 +418,47 @@ it("opens skills from the composer's cached list and saves back into it", async 
     ]);
   } finally {
     await act(async () => root.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+it("imports SKILL.md files, replacing a writable skill with the same name", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const existing: AgentSkillCatalogEntry = {
+    id: "skill-existing",
+    name: "Poster",
+    description: "Old",
+    source: "user",
+    readOnly: false,
+  };
+  api.list.mockReset().mockResolvedValue([existing]);
+  api.create.mockReset().mockResolvedValue({});
+  api.update.mockReset().mockResolvedValue({});
+  const poster = "---\nname: poster\ndescription: Find posters.\n---\n\nSteps.\n";
+  const caption = "---\nname: Caption\ndescription: Write captions.\n---\n\nSteps.\n";
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await show(root, <KnowledgeSection botId="bot-fixture" skillsOnly />);
+    const input = container.querySelector<HTMLInputElement>("[data-testid=skill-import-input]");
+    if (!input) throw new Error("Missing import input");
+    Object.defineProperty(input, "files", {
+      configurable: true,
+      value: [
+        new File([poster], "poster.md"),
+        new File([caption], "caption.md"),
+        new File(["x"], "notes.pdf"),
+      ],
+    });
+    await act(async () => input.dispatchEvent(new Event("change", { bubbles: true })));
+    await settle();
+    expect(api.update).toHaveBeenCalledWith({ skillId: "skill-existing", content: poster });
+    expect(api.create).toHaveBeenCalledWith({ content: caption });
+    expect(container.textContent).toContain("notes.pdf: only .md and .zip files are supported");
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
     vi.unstubAllGlobals();
   }
 });

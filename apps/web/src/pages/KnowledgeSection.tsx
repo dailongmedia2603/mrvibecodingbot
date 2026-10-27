@@ -2,15 +2,17 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ORPCError } from "@orpc/client";
 import type { AgentSkill, AgentSkillCatalogEntry, MemoryDocument } from "@rakazo/contracts";
 import { isDeletableMemoryDocument, isEmptyBotMemory } from "@rakazo/contracts";
+import { parseSkillMd } from "@rakazo/core";
 import { fetchFresh, writeSaved } from "@rakazo/core/query";
 import { Badge, Button, Skeleton, Textarea } from "@rakazo/ui-web";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@rakazo/ui-web/components/ui/tooltip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Plus } from "lucide-react";
+import { Download, Plus, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SettingsSectionHeading } from "../components/SettingsSectionHeading";
 import { downloadArtifactBytes } from "../lib/artifact-open";
 import { useSpaceQueries } from "../lib/query";
+import { readSkillFiles, SKILL_IMPORT_ACCEPT } from "../lib/skill-import";
 import { useSpaceRpc } from "../lib/space-rpc";
 
 const NO_DOCS: MemoryDocument[] = [];
@@ -348,7 +350,9 @@ function AgentSkills() {
   const [actionError, setError] = useState<string | null>(null);
   const error = actionError ?? (listQuery.isError ? t`Could not load` : null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const selection = useRef(0);
+  const importInput = useRef<HTMLInputElement>(null);
 
   async function refresh() {
     await fetchFresh(queryClient, list);
@@ -404,6 +408,51 @@ function AgentSkills() {
     }
   }
 
+  /** Create each imported skill, or replace a writable skill with the same name. */
+  async function importFiles(files: File[]) {
+    if (busy || files.length === 0) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const failures: string[] = [];
+    const skipped: string[] = [];
+    try {
+      const result = await readSkillFiles(files);
+      failures.push(...result.errors);
+      for (const skill of result.skills) {
+        const parsed = parseSkillMd(skill.content);
+        if ("error" in parsed) {
+          failures.push(`${skill.origin}: ${parsed.error}`);
+          continue;
+        }
+        const existing = skills.find(
+          (entry) => !entry.readOnly && entry.name.toLowerCase() === parsed.name.toLowerCase(),
+        );
+        try {
+          if (existing) {
+            await rpc.agentSkills.update({ skillId: existing.id, content: skill.content });
+          } else {
+            await rpc.agentSkills.create({ content: skill.content });
+          }
+          skipped.push(...skill.skipped.map((path) => `${parsed.name}: ${path}`));
+        } catch (cause) {
+          failures.push(
+            `${skill.origin}: ${cause instanceof Error ? cause.message : t`Could not save skill`}`,
+          );
+        }
+      }
+      try {
+        await refresh();
+      } catch {
+        failures.push(t`Could not load`);
+      }
+    } finally {
+      setBusy(false);
+    }
+    if (failures.length > 0) setError(failures.join("\n"));
+    if (skipped.length > 0) setNotice(`${t`Not imported`}\n${skipped.join("\n")}`);
+  }
+
   async function remove(skill: AgentSkill) {
     if (busy) return;
     if (!confirmingDelete) {
@@ -434,7 +483,11 @@ function AgentSkills() {
   const editorOpen = creating || open;
   return (
     <div data-testid="bot-knowledge-skills">
-      {error ? <div className="px-2.5 pb-2 text-[13px] text-destructive">{error}</div> : null}
+      {error ? (
+        <div className="whitespace-pre-line px-2.5 pb-2 text-[13px] text-destructive" dir="auto">
+          {error}
+        </div>
+      ) : null}
       {loading ? <Skeleton className="h-10 w-full" /> : null}
       {!loading && skills.length === 0 && !editorOpen && !error ? (
         <div className="px-2.5 py-1 text-[13.5px] text-muted-foreground">
@@ -531,24 +584,58 @@ function AgentSkills() {
           </div>
         </div>
       ) : (
-        <Button
-          variant="ghost"
-          type="button"
-          disabled={busy}
-          onClick={() => {
-            selection.current += 1;
-            setOpen(null);
-            setCreating(true);
-            setConfirmingDelete(false);
-            setDraft(NEW_SKILL_TEMPLATE);
-            setError(null);
-          }}
-          className="-mx-2.5 mt-2 h-auto min-h-11 w-[calc(100%+1.25rem)] justify-between px-2.5 py-2.5 text-sm font-normal text-foreground"
-        >
-          <Trans>New skill</Trans>
-          <Plus aria-hidden="true" className="size-4 text-muted-foreground" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              selection.current += 1;
+              setOpen(null);
+              setCreating(true);
+              setConfirmingDelete(false);
+              setDraft(NEW_SKILL_TEMPLATE);
+              setError(null);
+              setNotice(null);
+            }}
+            className="-mx-2.5 mt-2 h-auto min-h-11 w-[calc(100%+1.25rem)] justify-between px-2.5 py-2.5 text-sm font-normal text-foreground"
+          >
+            <Trans>New skill</Trans>
+            <Plus aria-hidden="true" className="size-4 text-muted-foreground" />
+          </Button>
+          <input
+            ref={importInput}
+            type="file"
+            multiple
+            accept={SKILL_IMPORT_ACCEPT}
+            className="hidden"
+            data-testid="skill-import-input"
+            onChange={(event) => {
+              const files = [...(event.target.files ?? [])];
+              event.target.value = "";
+              void importFiles(files);
+            }}
+          />
+          <Button
+            variant="ghost"
+            type="button"
+            disabled={busy}
+            onClick={() => importInput.current?.click()}
+            className="-mx-2.5 h-auto min-h-11 w-[calc(100%+1.25rem)] justify-between px-2.5 py-2.5 text-sm font-normal text-foreground"
+          >
+            {busy ? <Trans>Importing…</Trans> : <Trans>Import</Trans>}
+            <Upload aria-hidden="true" className="size-4 text-muted-foreground" />
+          </Button>
+        </>
       )}
+      {notice && !editorOpen ? (
+        <div
+          className="whitespace-pre-line px-2.5 pt-2 text-[12.5px] text-muted-foreground"
+          dir="auto"
+        >
+          {notice}
+        </div>
+      ) : null}
     </div>
   );
 }
