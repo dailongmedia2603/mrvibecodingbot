@@ -8,7 +8,14 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
 
-const api = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn(), get: vi.fn(), update: vi.fn() }));
+const api = vi.hoisted(() => ({
+  list: vi.fn(),
+  create: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  setBotAssignment: vi.fn(),
+  setScope: vi.fn(),
+}));
 const memoryApi = vi.hoisted(() => ({
   list: vi.fn(async () => []),
   remove: vi.fn(),
@@ -35,6 +42,21 @@ vi.mock("@rakazo/ui-web", () => {
       <button {...props} />
     ),
     Textarea: (props: ComponentProps<"textarea">) => <textarea {...props} />,
+    Checkbox: ({
+      checked,
+      onCheckedChange,
+      ...props
+    }: Omit<ComponentProps<"input">, "checked"> & {
+      checked?: boolean;
+      onCheckedChange?: (checked: boolean) => void;
+    }) => (
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onCheckedChange?.(event.target.checked)}
+        {...props}
+      />
+    ),
     Skeleton: Container,
     Tabs: Container,
     TabsList: Container,
@@ -46,7 +68,7 @@ vi.mock("@rakazo/ui-web", () => {
 
 import { downloadArtifactBytes } from "../lib/artifact-open";
 import { spaceQueries } from "../lib/query";
-import { KnowledgeSection } from "./KnowledgeSection";
+import { CompanyDocsSection, KnowledgeSection } from "./KnowledgeSection";
 
 const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 let queryClient = newClient();
@@ -454,11 +476,114 @@ it("imports SKILL.md files, replacing a writable skill with the same name", asyn
     await act(async () => input.dispatchEvent(new Event("change", { bubbles: true })));
     await settle();
     expect(api.update).toHaveBeenCalledWith({ skillId: "skill-existing", content: poster });
-    expect(api.create).toHaveBeenCalledWith({ content: caption });
+    expect(api.create).toHaveBeenCalledWith({
+      content: caption,
+      scope: "bot",
+      botIds: ["bot-fixture"],
+    });
     expect(container.textContent).toContain("notes.pdf: only .md and .zip files are supported");
   } finally {
     await act(async () => root.unmount());
     container.remove();
+    vi.unstubAllGlobals();
+  }
+});
+
+const scopedCatalog: AgentSkillCatalogEntry[] = [
+  {
+    id: "kt1",
+    name: "KT1 Company profile",
+    description: "Who we are",
+    source: "user",
+    readOnly: false,
+    scope: "company",
+    botIds: [],
+  },
+  {
+    id: "qt2",
+    name: "QT2 Monthly plan",
+    description: "Plan the month",
+    source: "user",
+    readOnly: false,
+    scope: "bot",
+    botIds: ["writer"],
+  },
+  {
+    id: "pricing",
+    name: "Agency pricing",
+    description: "Quote a client",
+    source: "user",
+    readOnly: false,
+    scope: "bot",
+    botIds: ["sales"],
+  },
+];
+
+it("lets a bot apply skills from the private library, leaving company docs out", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  api.list.mockResolvedValue(scopedCatalog);
+  api.setBotAssignment.mockImplementation(async ({ skillId, botId, assigned }) => {
+    const entry = scopedCatalog.find((item) => item.id === skillId);
+    return { ...entry, botIds: assigned ? [...(entry?.botIds ?? []), botId] : [] };
+  });
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const checkbox = (name: string) => {
+    const found = [...container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find(
+      (input) => input.parentElement?.textContent?.includes(name),
+    );
+    if (!found) throw new Error(`Missing checkbox: ${name}`);
+    return found;
+  };
+  try {
+    await show(root, <KnowledgeSection botId="writer" skillsOnly />);
+    expect(container.textContent).not.toContain("KT1 Company profile");
+    expect(container.textContent).toContain("Cùng 1 tài liệu công ty");
+    expect(checkbox("QT2 Monthly plan").checked).toBe(true);
+    expect(checkbox("Agency pricing").checked).toBe(false);
+    await act(async () => checkbox("Agency pricing").click());
+    expect(api.setBotAssignment).toHaveBeenCalledWith({
+      skillId: "pricing",
+      botId: "writer",
+      assigned: true,
+    });
+    expect(checkbox("Agency pricing").checked).toBe(true);
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+    api.list.mockReset();
+    vi.unstubAllGlobals();
+  }
+});
+
+it("lists company docs in Settings and creates new ones for every bot", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  api.list.mockResolvedValue(scopedCatalog);
+  api.create.mockResolvedValue(scopedCatalog[0]);
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const button = (text: string) => {
+    const found = [...container.querySelectorAll("button")].find((entry) =>
+      entry.textContent?.includes(text),
+    );
+    if (!found) throw new Error(`Missing button: ${text}`);
+    return found;
+  };
+  try {
+    await show(root, <CompanyDocsSection />);
+    expect(container.textContent).toContain("KT1 Company profile");
+    expect(container.textContent).not.toContain("QT2 Monthly plan");
+    expect(container.querySelector('input[type="checkbox"]')).toBeNull();
+    await act(async () => button("Tài liệu mới").click());
+    await act(async () => button("Save").click());
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ scope: "company" }));
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+    api.list.mockReset();
+    api.create.mockReset();
     vi.unstubAllGlobals();
   }
 });

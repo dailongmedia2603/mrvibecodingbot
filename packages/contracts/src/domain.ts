@@ -643,6 +643,10 @@ export type TaughtSkill = z.infer<typeof TaughtSkillSchema>;
 export const AgentSkillSourceSchema = z.enum(["user", "builtin", "plugin"]);
 export type AgentSkillSource = z.infer<typeof AgentSkillSourceSchema>;
 
+/** company: every bot reads it (company docs). bot: only the bots in botIds see it. */
+export const AgentSkillScopeSchema = z.enum(["company", "bot"]);
+export type AgentSkillScope = z.infer<typeof AgentSkillScopeSchema>;
+
 export const AgentSkillSchema = z.object({
   id: Id,
   name: z.string(),
@@ -650,6 +654,9 @@ export const AgentSkillSchema = z.object({
   content: z.string(),
   source: AgentSkillSourceSchema,
   readOnly: z.boolean(),
+  // Optional so clients and fixtures from before scoping still parse; absent means "bot" and [].
+  scope: AgentSkillScopeSchema.optional(),
+  botIds: z.array(Id).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -661,6 +668,8 @@ export const AgentSkillCatalogEntrySchema = AgentSkillSchema.pick({
   description: true,
   source: true,
   readOnly: true,
+  scope: true,
+  botIds: true,
 });
 export type AgentSkillCatalogEntry = z.infer<typeof AgentSkillCatalogEntrySchema>;
 
@@ -670,6 +679,8 @@ export const CreateAgentSkillInput = z
     name: z.string().min(1).max(80).optional(),
     description: z.string().min(1).max(2000).optional(),
     body: z.string().max(100_000).optional(),
+    scope: AgentSkillScopeSchema.optional(),
+    botIds: z.array(Id).max(200).optional(),
   })
   .superRefine((input, ctx) => {
     if (input.content?.trim()) return;

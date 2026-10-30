@@ -49,6 +49,7 @@ import {
   AgentSecretSchema,
   AgentSkillCatalogEntrySchema,
   AgentSkillSchema,
+  AgentSkillScopeSchema,
   AppBootstrapSchema,
   ApprovalModeSchema,
   ArtifactSchema,
@@ -832,6 +833,12 @@ export const appContract = {
     create: oc.input(CreateAgentSkillInput).output(AgentSkillSchema),
     update: oc.input(UpdateAgentSkillInput).output(AgentSkillSchema),
     remove: oc.input(z.object({ skillId: Id })).output(z.object({ ok: z.literal(true) })),
+    setScope: oc
+      .input(z.object({ skillId: Id, scope: AgentSkillScopeSchema }))
+      .output(AgentSkillCatalogEntrySchema),
+    setBotAssignment: oc
+      .input(z.object({ skillId: Id, botId: Id, assigned: z.boolean() }))
+      .output(AgentSkillCatalogEntrySchema),
   },
   capabilities: {
     list: oc.output(z.array(CapabilityInstallSchema)),

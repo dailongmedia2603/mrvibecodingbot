@@ -1,11 +1,19 @@
 import { ORPCError } from "@orpc/server";
 import { BUILTIN_AGENT_SKILLS } from "@rakazo/adapters";
-import type { Actor, AgentSkill, AgentSkillSource } from "@rakazo/contracts";
+import type {
+  Actor,
+  AgentSkill,
+  AgentSkillCatalogEntry,
+  AgentSkillScope,
+  AgentSkillSource,
+} from "@rakazo/contracts";
 import type { SkillSource } from "@rakazo/core";
 import {
+  asSkillScope,
   buildSkillMd,
   findSkillByName,
   isSkillReadOnly,
+  isSkillVisibleToBot,
   mergeBuiltinSkills,
   parseSkillMd,
 } from "@rakazo/core";
@@ -18,6 +26,8 @@ type AgentSkillRow = {
   description: string;
   content: string;
   source: string;
+  scope: string;
+  botIds: string[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -36,6 +46,8 @@ export function mapAgentSkill(row: AgentSkillRow): AgentSkill {
     content: row.content,
     source,
     readOnly: isSkillReadOnly(source as SkillSource),
+    scope: asSkillScope(row.scope),
+    botIds: row.botIds,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -49,6 +61,9 @@ function builtinCatalog(): AgentSkill[] {
     content: skill.content,
     source: "builtin" as const,
     readOnly: true,
+    // Built-ins reach every bot.
+    scope: "company" as const,
+    botIds: [],
     createdAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
   }));
@@ -132,6 +147,28 @@ export function createAgentSkillsService(prisma: PrismaClient) {
     return row;
   }
 
+  /** Only bots of the actor's space can be given a skill. */
+  async function botsInSpace(actor: Actor, botIds: readonly string[]): Promise<string[]> {
+    const unique = [...new Set(botIds)];
+    if (unique.length === 0) return [];
+    const found = await prisma.bot.findMany({
+      where: { id: { in: unique }, spaceId: actor.spaceId },
+      select: { id: true },
+    });
+    if (found.length !== unique.length) throw new IsolationError();
+    return unique;
+  }
+
+  function catalogEntry(row: AgentSkillRow): AgentSkillCatalogEntry {
+    const {
+      content: _content,
+      createdAt: _created,
+      updatedAt: _updated,
+      ...entry
+    } = mapAgentSkill(row);
+    return entry;
+  }
+
   return {
     async list(actor: Actor): Promise<Omit<AgentSkill, "content">[]> {
       const rows = await prisma.agentSkill.findMany({
@@ -143,12 +180,14 @@ export function createAgentSkillsService(prisma: PrismaClient) {
       );
     },
 
-    async listWithContent(actor: Actor): Promise<AgentSkill[]> {
+    /** With `botId`, only the skills that bot sees. */
+    async listWithContent(actor: Actor, botId?: string): Promise<AgentSkill[]> {
       const rows = await prisma.agentSkill.findMany({
         where: { spaceId: actor.spaceId, userId: actor.userId },
         orderBy: [{ name: "asc" }, { id: "asc" }],
       });
-      return mergeBuiltinSkills(builtinCatalog(), rows.map(mapAgentSkill));
+      const skills = mergeBuiltinSkills(builtinCatalog(), rows.map(mapAgentSkill));
+      return botId ? skills.filter((skill) => isSkillVisibleToBot(skill, botId)) : skills;
     },
 
     async get(actor: Actor, input: { skillId?: string; name?: string }): Promise<AgentSkill> {
@@ -177,9 +216,18 @@ export function createAgentSkillsService(prisma: PrismaClient) {
 
     async create(
       actor: Actor,
-      input: { content?: string; name?: string; description?: string; body?: string },
+      input: {
+        content?: string;
+        name?: string;
+        description?: string;
+        body?: string;
+        scope?: AgentSkillScope;
+        botIds?: string[];
+      },
     ): Promise<AgentSkill> {
       const resolved = resolveSkillContent(input);
+      const scope = input.scope ?? "bot";
+      const botIds = scope === "bot" ? await botsInSpace(actor, input.botIds ?? []) : [];
       const clash = await prisma.agentSkill.findFirst({
         where: {
           spaceId: actor.spaceId,
@@ -202,6 +250,8 @@ export function createAgentSkillsService(prisma: PrismaClient) {
             description: resolved.description,
             content: resolved.content,
             source: "user",
+            scope,
+            botIds,
           },
         });
         return mapAgentSkill(row);
@@ -301,6 +351,40 @@ export function createAgentSkillsService(prisma: PrismaClient) {
       });
       if (deleted.count !== 1) throw new IsolationError();
       return { ok: true };
+    },
+
+    /** Moves a skill between company docs (every bot) and the private library. */
+    async setScope(
+      actor: Actor,
+      input: { skillId: string; scope: AgentSkillScope },
+    ): Promise<AgentSkillCatalogEntry> {
+      const existing = await owned(actor, input.skillId);
+      if (isSkillReadOnly(asSource(existing.source) as SkillSource)) {
+        throw new ORPCError("BAD_REQUEST", { message: "Builtin and plugin skills are read-only." });
+      }
+      const row = await prisma.agentSkill.update({
+        where: { id: existing.id },
+        data: { scope: input.scope },
+      });
+      return catalogEntry(row);
+    },
+
+    /** Gives a private skill to one bot, or takes it back. */
+    async setBotAssignment(
+      actor: Actor,
+      input: { skillId: string; botId: string; assigned: boolean },
+    ): Promise<AgentSkillCatalogEntry> {
+      const existing = await owned(actor, input.skillId);
+      if (isSkillReadOnly(asSource(existing.source) as SkillSource)) {
+        throw new ORPCError("BAD_REQUEST", { message: "Builtin and plugin skills are read-only." });
+      }
+      await botsInSpace(actor, [input.botId]);
+      const others = existing.botIds.filter((botId) => botId !== input.botId);
+      const row = await prisma.agentSkill.update({
+        where: { id: existing.id },
+        data: { botIds: input.assigned ? [...others, input.botId] : others },
+      });
+      return catalogEntry(row);
     },
   };
 }

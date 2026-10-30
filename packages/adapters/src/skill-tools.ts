@@ -5,6 +5,7 @@ import {
   isSkillReadOnly,
   mergeBuiltinSkills,
   parseSkillMd,
+  skillVisibleToBotWhere,
 } from "@rakazo/core";
 import type { PrismaClient } from "@rakazo/db";
 import { BUILTIN_AGENT_SKILLS } from "./builtin-skills.js";
@@ -24,6 +25,8 @@ const MAX_SKILL_DESCRIPTION_CHARS = 2000;
 type SkillOwner = {
   spaceId: string;
   userId: string;
+  /** The bot asking: it sees company docs and the skills assigned to it, nothing else. */
+  botId?: string;
 };
 
 type AgentSkillRow = {
@@ -32,6 +35,8 @@ type AgentSkillRow = {
   description: string;
   content: string;
   source: string;
+  scope: string;
+  botIds: string[];
 };
 
 function asSource(value: string): SkillSource {
@@ -48,6 +53,8 @@ function toRecord(row: AgentSkillRow): SkillRecord & { id: string } {
     content: row.content,
     source,
     readOnly: isSkillReadOnly(source),
+    scope: row.scope,
+    botIds: row.botIds,
   };
 }
 
@@ -86,7 +93,11 @@ export async function listAgentSkillRecords(
   owner: SkillOwner,
 ): Promise<Array<SkillRecord & { id: string }>> {
   const rows = await prisma.agentSkill.findMany({
-    where: { spaceId: owner.spaceId, userId: owner.userId },
+    where: {
+      spaceId: owner.spaceId,
+      userId: owner.userId,
+      ...(owner.botId ? skillVisibleToBotWhere(owner.botId) : {}),
+    },
     orderBy: [{ name: "asc" }, { id: "asc" }],
   });
   return mergeBuiltinSkills(builtinRecords(), rows.map(toRecord));
@@ -152,7 +163,12 @@ export async function skillCreateFromTool(
   const oversized = rejectOversizedContent(content);
   if (oversized) return { error: oversized };
 
-  const existing = await findOwnedSkill(prisma, owner, { name });
+  // Names are unique per user, including skills assigned only to other bots.
+  const existing = await findOwnedSkill(
+    prisma,
+    { spaceId: owner.spaceId, userId: owner.userId },
+    { name },
+  );
   if (existing) return { error: `A skill named "${existing.name}" already exists.` };
 
   try {
@@ -164,6 +180,9 @@ export async function skillCreateFromTool(
         description,
         content,
         source: "user",
+        // A bot's own skill is for that bot; the user can share it from Settings.
+        scope: "bot",
+        botIds: owner.botId ? [owner.botId] : [],
       },
     });
     return {
@@ -233,7 +252,11 @@ export async function skillUpdateFromTool(
   if (oversized) return { error: oversized };
 
   if (nextName.toLowerCase() !== existing.name.toLowerCase()) {
-    const clash = await findOwnedSkill(prisma, owner, { name: nextName });
+    const clash = await findOwnedSkill(
+      prisma,
+      { spaceId: owner.spaceId, userId: owner.userId },
+      { name: nextName },
+    );
     if (clash && clash.id !== existing.id) {
       return { error: `A skill named "${clash.name}" already exists.` };
     }

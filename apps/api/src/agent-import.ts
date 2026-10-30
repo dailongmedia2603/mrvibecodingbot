@@ -595,6 +595,8 @@ export async function createImportedBot<PreparedKey>(
             description: item.description,
             content: item.content,
             source: "user",
+            // An imported bot's skills are that bot's.
+            botIds: [botId],
           },
         })
         .catch(conflict("A skill with that name was just added. Try again."));

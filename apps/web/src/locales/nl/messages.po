@@ -738,6 +738,11 @@ msgstr ""
 msgid "Any model, with your own key"
 msgstr "Elk model, met je eigen sleutel"
 
+#. placeholder {0}: entry.name
+#: src/pages/KnowledgeSection.tsx
+msgid "Áp dụng {0} cho bot này"
+msgstr ""
+
 #: src/components/AskCard.tsx
 #: src/lib/localized-provider-hint.ts
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
@@ -979,6 +984,10 @@ msgstr "De bot kijkt alleen, handelt niet"
 msgid "Bot models"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Bot nào cũng đọc được các tài liệu này, không cần gán."
+msgstr ""
+
 #: src/pages/shell/computer-overlay.tsx
 msgid "Bot screen"
 msgstr "Bot-scherm"
@@ -1202,6 +1211,10 @@ msgstr "Verbinding controleren…"
 msgid "Checking…"
 msgstr "Bezig met controleren…"
 
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Chép lệnh"
+msgstr ""
+
 #: src/pages/shell/agent-import.tsx
 msgid "Choose a bot"
 msgstr "Kies een bot"
@@ -1239,6 +1252,18 @@ msgstr "Map kiezen"
 #: src/components/ModelCredits.tsx
 #: src/components/SubscriptionGate.tsx
 msgid "Choose how to use Rakazo"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chưa có tài liệu nào"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chuyển sang Tài liệu công ty"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chuyển về Skills riêng"
 msgstr ""
 
 #: src/lib/localized-provider-hint.ts
@@ -2186,6 +2211,10 @@ msgstr "Cron"
 msgid "Cron expression"
 msgstr "Cron-expressie"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Cùng {companyDocCount} tài liệu công ty, bot nào cũng đọc được."
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
@@ -2210,6 +2239,10 @@ msgstr "{label} aanpassen"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Customize bot avatar"
 msgstr "Botavatar aanpassen"
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Đã chép"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Dark"
@@ -3589,6 +3622,10 @@ msgstr "Modellen van de server"
 #: src/lib/model-connection-preflight.ts
 msgid "Models list OK. {modelCount, plural, one {# model} other {# models}} available. Chat was not tested."
 msgstr "Modellenlijst is in orde. {modelCount, plural, one {# model} other {# modellen}} beschikbaar. Chat is niet getest."
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Mỗi tài khoản Telegram chỉ nhắn được với một bot trong app qua cùng một bot Telegram. Muốn thêm: tạo bot ở @BotFather, chạy lệnh dưới trong Terminal của máy đang chạy app, dán token khi được hỏi, rồi nhấn Cmd+R. Bot mới sẽ có trong Connect a chat app."
+msgstr ""
 
 #: src/lib/cron.ts
 msgid "Monday"
@@ -5090,6 +5127,10 @@ msgid "Skill {position}"
 msgstr "Skill {position}"
 
 #: src/pages/KnowledgeSection.tsx
+msgid "Skill áp dụng"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Skills"
 msgstr "Skills"
@@ -5327,6 +5368,14 @@ msgstr "Systeem"
 msgid "Table"
 msgstr "Tabel"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Tài liệu công ty"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Tài liệu mới"
+msgstr ""
+
 #: src/pages/shell/computer-overlay.tsx
 msgid "Take control"
 msgstr "Controle overnemen"
@@ -5426,6 +5475,14 @@ msgstr "De gekozen geheugenaanbieder is niet beschikbaar in deze build."
 
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Their own model is cleared. You can pick one again in each bot."
+msgstr ""
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Thêm <0>--danh-sach</0> để xem các bot đã kết nối, hoặc <1>--xoa TÊN</1> để gỡ một bot phụ."
+msgstr ""
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Thêm bot Telegram mới"
 msgstr ""
 
 #: src/pages/shell/agent-import.tsx

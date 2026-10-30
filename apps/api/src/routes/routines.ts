@@ -329,7 +329,7 @@ export function routinesRoutes(ctx: RouterContext) {
           });
           if (existing) return { runId: existing.id };
         }
-        const skillRecords = await agentSkills.listWithContent(context.actor);
+        const skillRecords = await agentSkills.listWithContent(context.actor, routine.botId);
         const prompt = expandSkillReferencesInPrompt(routine.prompt, skillRecords);
         let run: { id: string };
         try {

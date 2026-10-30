@@ -244,6 +244,12 @@ export function memoryRoutes(ctx: RouterContext) {
       remove: authed.agentSkills.remove.handler(async ({ context, input }) =>
         agentSkills.remove(context.actor, input.skillId),
       ),
+      setScope: authed.agentSkills.setScope.handler(async ({ context, input }) =>
+        agentSkills.setScope(context.actor, input),
+      ),
+      setBotAssignment: authed.agentSkills.setBotAssignment.handler(async ({ context, input }) =>
+        agentSkills.setBotAssignment(context.actor, input),
+      ),
     },
   };
 }

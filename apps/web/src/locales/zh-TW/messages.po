@@ -739,6 +739,11 @@ msgstr "Anthropic API"
 msgid "Any model, with your own key"
 msgstr "使用自己的金鑰連接任何模型"
 
+#. placeholder {0}: entry.name
+#: src/pages/KnowledgeSection.tsx
+msgid "Áp dụng {0} cho bot này"
+msgstr ""
+
 #: src/components/AskCard.tsx
 #: src/lib/localized-provider-hint.ts
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
@@ -980,6 +985,10 @@ msgstr "機器人只觀察，不操作"
 msgid "Bot models"
 msgstr "機器人模型"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Bot nào cũng đọc được các tài liệu này, không cần gán."
+msgstr ""
+
 #: src/pages/shell/computer-overlay.tsx
 msgid "Bot screen"
 msgstr "機器人螢幕"
@@ -1203,6 +1212,10 @@ msgstr "正在檢查連線…"
 msgid "Checking…"
 msgstr "正在檢查…"
 
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Chép lệnh"
+msgstr ""
+
 #: src/pages/shell/agent-import.tsx
 msgid "Choose a bot"
 msgstr "選擇機器人"
@@ -1241,6 +1254,18 @@ msgstr "選擇資料夾"
 #: src/components/SubscriptionGate.tsx
 msgid "Choose how to use Rakazo"
 msgstr "選擇 Rakazo 的使用方式"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chưa có tài liệu nào"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chuyển sang Tài liệu công ty"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chuyển về Skills riêng"
+msgstr ""
 
 #: src/lib/localized-provider-hint.ts
 msgid "Claude subscription"
@@ -2187,6 +2212,10 @@ msgstr "Cron"
 msgid "Cron expression"
 msgstr "Cron 表示式"
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Cùng {companyDocCount} tài liệu công ty, bot nào cũng đọc được."
+msgstr ""
+
 #: src/components/AccountAccess.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Current password"
@@ -2211,6 +2240,10 @@ msgstr "自訂{label}"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Customize bot avatar"
 msgstr "自訂機器人頭像"
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Đã chép"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Dark"
@@ -3590,6 +3623,10 @@ msgstr "來自伺服器的模型"
 #: src/lib/model-connection-preflight.ts
 msgid "Models list OK. {modelCount, plural, one {# model} other {# models}} available. Chat was not tested."
 msgstr "模型清單正常。{modelCount, plural, one {# 個模型} other {# 個模型}}可用。未測試聊天。"
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Mỗi tài khoản Telegram chỉ nhắn được với một bot trong app qua cùng một bot Telegram. Muốn thêm: tạo bot ở @BotFather, chạy lệnh dưới trong Terminal của máy đang chạy app, dán token khi được hỏi, rồi nhấn Cmd+R. Bot mới sẽ có trong Connect a chat app."
+msgstr ""
 
 #: src/lib/cron.ts
 msgid "Monday"
@@ -5091,6 +5128,10 @@ msgid "Skill {position}"
 msgstr "技能 {position}"
 
 #: src/pages/KnowledgeSection.tsx
+msgid "Skill áp dụng"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Skills"
 msgstr "技能"
@@ -5328,6 +5369,14 @@ msgstr "系統"
 msgid "Table"
 msgstr "表格"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Tài liệu công ty"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Tài liệu mới"
+msgstr ""
+
 #: src/pages/shell/computer-overlay.tsx
 msgid "Take control"
 msgstr "接管控制權"
@@ -5428,6 +5477,14 @@ msgstr "所選記憶供應商在此版本中不可用。"
 #: src/pages/model-settings/space-bots-model.tsx
 msgid "Their own model is cleared. You can pick one again in each bot."
 msgstr "已清除機器人的個別模型設定。你可以隨時為各機器人重新選擇模型。"
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Thêm <0>--danh-sach</0> để xem các bot đã kết nối, hoặc <1>--xoa TÊN</1> để gỡ một bot phụ."
+msgstr ""
+
+#: src/pages/TelegramBotCommandNote.tsx
+msgid "Thêm bot Telegram mới"
+msgstr ""
 
 #: src/pages/shell/agent-import.tsx
 msgid "These files are too large to import."

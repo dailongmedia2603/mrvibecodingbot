@@ -447,6 +447,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
           listAgentSkillRecords(deps.prisma, {
             spaceId: run.spaceId,
             userId: run.userId,
+            botId: run.botId,
           }),
           deps.prisma.agentSecret.findMany({
             where: { spaceId: run.spaceId },

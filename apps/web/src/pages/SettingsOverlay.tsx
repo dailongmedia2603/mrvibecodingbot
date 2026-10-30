@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { SpaceMemoryConfig, UsageSummary } from "@rakazo/contracts";
 import { Button, Dialog, DialogClose, DialogContent, DialogTitle } from "@rakazo/ui-web";
 import {
+  BookOpen,
   Brain,
   ChevronLeft,
   ChevronRight,
@@ -32,6 +33,7 @@ import {
   UsageSettingsPanel,
 } from "./AccountSettingsOverlay";
 import { BillingSettingsPanel } from "./BillingSettingsPanel";
+import { CompanyDocsSection } from "./KnowledgeSection";
 import { MemorySettingsOverlay } from "./MemorySettingsOverlay";
 import { MessagingSettingsPanel } from "./MessagingSettingsPanel";
 import { ModelSettingsOverlay } from "./ModelSettingsOverlay";
@@ -153,6 +155,7 @@ export function SettingsOverlay({
       ? [{ id: "messaging" as const, label: t`Messaging`, icon: MessageCircle }]
       : []),
     { id: "memory", label: t`Memory`, icon: Brain },
+    { id: "company-docs", label: t`Tài liệu công ty`, icon: BookOpen },
     { id: "usage", label: t`Usage`, icon: Gauge },
     ...(showComputer ? [{ id: "computer" as const, label: t`Computer`, icon: Monitor }] : []),
     ...(billingEnabled ? [{ id: "billing" as const, label: t`Billing`, icon: CreditCard }] : []),
@@ -397,6 +400,7 @@ export function SettingsOverlay({
                   ) : null}
                   {section === "confirmations" ? <ApprovalRulesSettings scope="account" /> : null}
                   {section === "vault" ? <VaultSettings scope="account" /> : null}
+                  {section === "company-docs" ? <CompanyDocsSection /> : null}
                   {section === "messaging" && messagingEnabled ? <MessagingSettingsPanel /> : null}
                   {section === "usage" ? (
                     <UsageSettingsPanel usage={usage} panelRef={usageRef} />

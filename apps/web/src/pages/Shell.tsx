@@ -15,6 +15,7 @@ import {
   foldPeerReplies,
   isActive,
   isRunWorking,
+  isSkillVisibleToAnyBot,
   memberName,
 } from "@rakazo/core";
 import { fetchFresh, writeSaved } from "@rakazo/core/query";
@@ -257,6 +258,16 @@ function SpaceShell() {
     [active?.color, active?.id],
   );
   const activeGroup = groups.find((group) => group.id === groupId);
+  // The slash picker offers only what the bot (or a group member) in this chat can use.
+  const chatBotKey = (
+    inGroup ? (activeGroup?.members.map((member) => member.botId) ?? []) : active ? [active.id] : []
+  ).join(",");
+  const chatAgentSkills = useMemo(() => {
+    const botIds = chatBotKey ? chatBotKey.split(",") : [];
+    return botIds.length === 0
+      ? agentSkills
+      : agentSkills.filter((skill) => isSkillVisibleToAnyBot(skill, botIds));
+  }, [agentSkills, chatBotKey]);
   const activeBotId = useRef<string | undefined>(inGroup ? undefined : active?.id);
   activeBotId.current = inGroup ? undefined : active?.id;
   const activeGroupId = useRef<string | undefined>(groupId);
@@ -955,7 +966,7 @@ function SpaceShell() {
               replyTargetName={replyTargetName}
               onClearReply={composer.clearReply}
               mentionTargets={composerMentionTargets}
-              agentSkills={agentSkills}
+              agentSkills={chatAgentSkills}
               onSlashOpen={refreshAgentSkills}
               onSlashAction={(action) => {
                 if (action === "chat-settings") {

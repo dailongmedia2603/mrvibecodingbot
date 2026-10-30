@@ -78,6 +78,7 @@ export * from "./search.js";
 export * from "./secrets-guard.js";
 export * from "./self-update.js";
 export * from "./signup-policy.js";
+export * from "./skill-scope.js";
 export * from "./speech-locale.js";
 export * from "./speech-text.js";
 export * from "./stuck-work.js";

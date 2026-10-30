@@ -1132,7 +1132,7 @@ export const builtinAgentTools: ConnectorTool[] = [
   {
     name: "skill_create",
     description:
-      "Create a reusable Claude Agent Skill (generic how-to SKILL.md) shared across assistants. The Pi runtime already understands this format; we persist and inject them. Use when a multi-step task is worth repeating or the user asks to save a skill. Do not include account names, channels, or inboxes — those belong in a routine.",
+      "Create a reusable Claude Agent Skill (generic how-to SKILL.md). Only you see it until the user shares it with other bots or company docs. Use when a multi-step task is worth repeating or the user asks to save a skill. Do not include account names, channels, or inboxes — those belong in a routine.",
     inputSchema: {
       type: "object",
       properties: {
