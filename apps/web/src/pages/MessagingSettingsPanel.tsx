@@ -21,6 +21,7 @@ import { providerLabel } from "../lib/messaging";
 import { useSpaceQueries } from "../lib/query";
 import { rpc } from "../lib/rpc";
 import { ExternalConversationSettings } from "./ExternalConversationSettings";
+import { TelegramBotCommandNote } from "./TelegramBotCommandNote";
 
 const LINK_POLL_MS = 3_000;
 const NO_INSTALLATIONS: MessagingInstallationsStatus = { available: false, installations: [] };
@@ -544,6 +545,8 @@ export function MessagingSettingsPanel() {
           </ul>
         </section>
       ) : null}
+
+      <TelegramBotCommandNote />
     </div>
   );
 }

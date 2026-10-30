@@ -381,6 +381,11 @@ services:
     mem_limit: 1536m
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # Extra named Telegram bots (TELEGRAM_BOT_TOKEN_<NAME> + TELEGRAM_WEBHOOK_SECRET_TOKEN_<NAME>),
+    # kept in their own file so names you choose reach the API and worker without listing them here.
+    env_file:
+      - path: telegram-bots.env
+        required: false
     environment:
       <<: *app-environment
       # Sign-in, sessions, billing and inbound webhooks: API only.
@@ -474,6 +479,11 @@ services:
     mem_limit: 2g
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # Extra named Telegram bots (TELEGRAM_BOT_TOKEN_<NAME> + TELEGRAM_WEBHOOK_SECRET_TOKEN_<NAME>),
+    # kept in their own file so names you choose reach the API and worker without listing them here.
+    env_file:
+      - path: telegram-bots.env
+        required: false
     environment:
       <<: *app-environment
       GRAPHILE_WORKER_CONCURRENCY:

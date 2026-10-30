@@ -1,6 +1,6 @@
 {
   "name": "@rakazo/desktop",
-  "productName": "Mr. Vibe Coding BOT",
+  "productName": "1 Business Agent",
   "version": "0.3.5",
   "author": {
     "name": "Rakazo"
@@ -57,6 +57,10 @@
       {
         "from": "../../infra/compose/.env.images.example",
         "to": "stack/.env.images.example"
+      },
+      {
+        "from": "../../infra/compose/ket-noi-telegram.sh",
+        "to": "stack/ket-noi-telegram.sh"
       }
     ],
     "extraMetadata": {
@@ -64,13 +68,13 @@
       "main": "dist/main.js"
     },
     "mac": {
-      "icon": "assets/mr-vibe-coding-bot.icns",
+      "icon": "assets/1-business-agent.icns",
       "category": "public.app-category.productivity",
       "x64ArchFiles": "{**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node,**/node_modules/@oxc-parser/binding-darwin-*/parser.darwin-*.node}",
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Mr. Vibe Coding BOT uses the microphone for dictation and voice calls with your bots."
+        "NSMicrophoneUsageDescription": "1 Business Agent uses the microphone for dictation and voice calls with your bots."
       },
       "target": [
         "dmg",
@@ -100,7 +104,7 @@
       ]
     },
     "win": {
-      "icon": "assets/mr-vibe-coding-bot.ico",
+      "icon": "assets/1-business-agent.ico",
       "target": [
         "nsis"
       ],

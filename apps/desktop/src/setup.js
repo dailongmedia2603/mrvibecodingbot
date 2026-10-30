@@ -23,10 +23,10 @@
   const PHASE_LABELS = {
     "checking-docker": "Getting ready…",
     preparing: "Getting ready…",
-    pulling: "Downloading Mr. Vibe Coding BOT…",
-    starting: "Starting Mr. Vibe Coding BOT…",
+    pulling: "Downloading 1 Business Agent…",
+    starting: "Starting 1 Business Agent…",
     "waiting-healthy": "Almost ready…",
-    ready: "Mr. Vibe Coding BOT is ready.",
+    ready: "1 Business Agent is ready.",
   };
   const TERMINAL_PHASES = new Set([
     "idle",
