@@ -9,10 +9,23 @@ import type {
 import { isDeletableMemoryDocument, isEmptyBotMemory } from "@rakazo/contracts";
 import { parseSkillMd } from "@rakazo/core";
 import { fetchFresh, writeSaved } from "@rakazo/core/query";
-import { Badge, Button, Checkbox, Skeleton, Textarea } from "@rakazo/ui-web";
+import {
+  Badge,
+  Button,
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Skeleton,
+  Textarea,
+} from "@rakazo/ui-web";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@rakazo/ui-web/components/ui/tooltip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Plus, Upload } from "lucide-react";
+import { ChevronDown, Download, Plus, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SettingsSectionHeading } from "../components/SettingsSectionHeading";
 import { downloadArtifactBytes } from "../lib/artifact-open";
@@ -49,7 +62,7 @@ export function KnowledgeSection({
           <Trans>Skills</Trans>
         </h3>
         <div className="rounded-xl bg-muted/50 p-4">
-          <AgentSkills mode={{ kind: "bot", botId }} />
+          <BotSkillPicker botId={botId} />
         </div>
       </section>
     );
@@ -72,6 +85,20 @@ export function CompanyDocsSection() {
       </p>
       <div className="rounded-xl bg-muted/50 p-4">
         <AgentSkills mode={{ kind: "company" }} />
+      </div>
+    </section>
+  );
+}
+
+/** Every skill bots can be given; each bot picks its own from here. Mounted in Settings. */
+export function SkillLibrarySection() {
+  return (
+    <section data-testid="skill-library">
+      <p className="mb-3 text-[13px] text-muted-foreground">
+        <Trans>Bot chỉ dùng những skill được chọn trong phần Skills của bot đó.</Trans>
+      </p>
+      <div className="rounded-xl bg-muted/50 p-4">
+        <AgentSkills mode={{ kind: "library" }} />
       </div>
     </section>
   );
@@ -360,11 +387,16 @@ description: Tài liệu này nói về gì và khi nào bot nên đọc.
 Nội dung tài liệu.
 `;
 
-/** A bot's own library, with the skills it applies, or the company docs every bot reads. */
-type SkillLibraryMode = { kind: "bot"; botId: string } | { kind: "company" };
+/** The skill library bots pick from, or the company docs every bot reads; both live in Settings. */
+type SkillLibraryMode = { kind: "library" } | { kind: "company" };
 
 function isCompanyDoc(entry: AgentSkillCatalogEntry): boolean {
   return entry.source === "user" && entry.scope === "company";
+}
+
+/** Case- and accent-insensitive, so "bang gia" finds "Bảng giá". */
+function searchKey(value: string): string {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/gi, "d").toLowerCase();
 }
 
 function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
@@ -376,19 +408,12 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
   const list = queries.agentSkills.list.queryOptions();
   const listQuery = useQuery({ ...list, refetchOnMount: "always" });
   const allSkills = listQuery.data ?? NO_SKILLS;
-  const botId = mode.kind === "bot" ? mode.botId : null;
-  const applies = (entry: AgentSkillCatalogEntry) =>
-    entry.source !== "user" || (botId !== null && (entry.botIds ?? []).includes(botId));
-  // A bot lists its whole private library, the skills it applies first; company docs live in Settings.
-  const skills =
-    botId === null
-      ? allSkills.filter(isCompanyDoc)
-      : allSkills
-          .filter((entry) => !isCompanyDoc(entry))
-          .sort((a, b) => Number(applies(b)) - Number(applies(a)));
-  const companyDocCount = allSkills.filter(isCompanyDoc).length;
-  const newSkillScope: { scope: AgentSkillScope; botIds?: string[] } =
-    botId === null ? { scope: "company" } : { scope: "bot", botIds: [botId] };
+  const company = mode.kind === "company";
+  const skills = allSkills.filter((entry) => isCompanyDoc(entry) === company);
+  // A new library skill reaches no bot until a bot picks it.
+  const newSkillScope: { scope: AgentSkillScope; botIds?: string[] } = company
+    ? { scope: "company" }
+    : { scope: "bot", botIds: [] };
   const loading = listQuery.isPending;
   const [open, setOpen] = useState<AgentSkill | null>(null);
   const [creating, setCreating] = useState(false);
@@ -501,26 +526,6 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
     if (skipped.length > 0) setNotice(`${t`Not imported`}\n${skipped.join("\n")}`);
   }
 
-  async function setApplied(entry: AgentSkillCatalogEntry, assigned: boolean) {
-    if (busy || botId === null) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const updated = await rpc.agentSkills.setBotAssignment({
-        skillId: entry.id,
-        botId,
-        assigned,
-      });
-      await writeSaved(queryClient, list.queryKey, (current) =>
-        (current ?? []).map((item) => (item.id === updated.id ? updated : item)),
-      );
-    } catch {
-      setError(t`Could not save skill`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function moveTo(skill: AgentSkill, scope: AgentSkillScope) {
     if (busy) return;
     setBusy(true);
@@ -571,7 +576,7 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
 
   const editorOpen = creating || open;
   return (
-    <div data-testid={botId === null ? "company-docs-list" : "bot-knowledge-skills"}>
+    <div data-testid={company ? "company-docs-list" : "skill-library-list"}>
       {error ? (
         <div className="whitespace-pre-line px-2.5 pb-2 text-[13px] text-destructive" dir="auto">
           {error}
@@ -580,25 +585,12 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
       {loading ? <Skeleton className="h-10 w-full" /> : null}
       {!loading && skills.length === 0 && !editorOpen && !error ? (
         <div className="px-2.5 py-1 text-[13.5px] text-muted-foreground">
-          {botId === null ? <Trans>Chưa có tài liệu nào</Trans> : <Trans>No skills yet</Trans>}
-        </div>
-      ) : null}
-      {botId !== null && !loading && skills.length > 0 && !editorOpen ? (
-        <div className="pb-1 text-[12.5px] text-muted-foreground">
-          <Trans>Skill áp dụng</Trans>
+          {company ? <Trans>Chưa có tài liệu nào</Trans> : <Trans>No skills yet</Trans>}
         </div>
       ) : null}
       {!editorOpen
         ? skills.map((entry) => (
-            <div key={entry.id} className="-mx-2.5 flex items-center gap-1 ps-2.5">
-              {botId !== null ? (
-                <Checkbox
-                  checked={applies(entry)}
-                  disabled={busy || entry.source !== "user"}
-                  aria-label={t`Áp dụng ${entry.name} cho bot này`}
-                  onCheckedChange={(checked) => void setApplied(entry, checked)}
-                />
-              ) : null}
+            <div key={entry.id} className="-mx-2.5 flex items-center gap-1">
               <Button
                 variant="ghost"
                 type="button"
@@ -676,11 +668,11 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
                 variant="ghost"
                 type="button"
                 disabled={busy}
-                onClick={() => void moveTo(open, botId === null ? "bot" : "company")}
+                onClick={() => void moveTo(open, company ? "bot" : "company")}
                 className="px-3 py-1.5 text-[13px] text-muted-foreground"
               >
-                {botId === null ? (
-                  <Trans>Chuyển về Skills riêng</Trans>
+                {company ? (
+                  <Trans>Chuyển sang Danh sách skill</Trans>
                 ) : (
                   <Trans>Chuyển sang Tài liệu công ty</Trans>
                 )}
@@ -712,13 +704,13 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
               setOpen(null);
               setCreating(true);
               setConfirmingDelete(false);
-              setDraft(botId === null ? NEW_COMPANY_DOC_TEMPLATE : NEW_SKILL_TEMPLATE);
+              setDraft(company ? NEW_COMPANY_DOC_TEMPLATE : NEW_SKILL_TEMPLATE);
               setError(null);
               setNotice(null);
             }}
             className="-mx-2.5 mt-2 h-auto min-h-11 w-[calc(100%+1.25rem)] justify-between px-2.5 py-2.5 text-sm font-normal text-foreground"
           >
-            {botId === null ? <Trans>Tài liệu mới</Trans> : <Trans>New skill</Trans>}
+            {company ? <Trans>Tài liệu mới</Trans> : <Trans>New skill</Trans>}
             <Plus aria-hidden="true" className="size-4 text-muted-foreground" />
           </Button>
           <input
@@ -746,17 +738,178 @@ function AgentSkills({ mode }: { mode: SkillLibraryMode }) {
           </Button>
         </>
       )}
-      {botId !== null && companyDocCount > 0 && !editorOpen ? (
-        <div className="pt-2 text-[12.5px] text-muted-foreground">
-          <Trans>Cùng {companyDocCount} tài liệu công ty, bot nào cũng đọc được.</Trans>
-        </div>
-      ) : null}
       {notice && !editorOpen ? (
         <div
           className="whitespace-pre-line px-2.5 pt-2 text-[12.5px] text-muted-foreground"
           dir="auto"
         >
           {notice}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The skills one bot uses, picked from the Settings skill library. Company docs and built-in
+ * skills reach every bot, so only library skills are listed to pick.
+ */
+function BotSkillPicker({ botId }: { botId: string }) {
+  const rpc = useSpaceRpc();
+  const { t } = useLingui();
+  const queries = useSpaceQueries();
+  const queryClient = useQueryClient();
+  const list = queries.agentSkills.list.queryOptions();
+  const listQuery = useQuery({ ...list, refetchOnMount: "always" });
+  const allSkills = listQuery.data ?? NO_SKILLS;
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const isPicked = (entry: AgentSkillCatalogEntry) => (entry.botIds ?? []).includes(botId);
+  const library = allSkills.filter((entry) => entry.source === "user" && !isCompanyDoc(entry));
+  const picked = allSkills.filter(
+    (entry) => !isCompanyDoc(entry) && (entry.source !== "user" || isPicked(entry)),
+  );
+  const needle = searchKey(query.trim());
+  const matches = needle
+    ? library.filter((entry) => searchKey(entry.name).includes(needle))
+    : library;
+  const companyDocCount = allSkills.filter(isCompanyDoc).length;
+
+  async function toggle(entry: AgentSkillCatalogEntry) {
+    if (pending.has(entry.id)) return;
+    setPending((current) => new Set(current).add(entry.id));
+    setError(null);
+    try {
+      const updated = await rpc.agentSkills.setBotAssignment({
+        skillId: entry.id,
+        botId,
+        assigned: !isPicked(entry),
+      });
+      await writeSaved(queryClient, list.queryKey, (current) =>
+        (current ?? []).map((item) => (item.id === updated.id ? updated : item)),
+      );
+    } catch {
+      setError(t`Could not save skill`);
+    } finally {
+      setPending((current) => {
+        const next = new Set(current);
+        next.delete(entry.id);
+        return next;
+      });
+    }
+  }
+
+  return (
+    <div data-testid="bot-knowledge-skills">
+      {error ? <div className="pb-2 text-[13px] text-destructive">{error}</div> : null}
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (next) setQuery("");
+          setOpen(next);
+        }}
+      >
+        <PopoverTrigger
+          role="combobox"
+          aria-label={t`Chọn skill`}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          disabled={listQuery.isPending}
+          className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-start text-sm text-muted-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        >
+          <span className="min-w-0 truncate">
+            <Trans>Chọn skill</Trans>
+          </span>
+          <ChevronDown size={16} strokeWidth={1.8} aria-hidden="true" className="ml-3 shrink-0" />
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          sideOffset={8}
+          initialFocus={searchRef}
+          className="w-(--anchor-width) gap-0 overflow-hidden p-0 motion-reduce:animate-none"
+        >
+          <Command label={t`Tìm skill`} shouldFilter={false} loop>
+            <CommandInput
+              ref={searchRef}
+              value={query}
+              onValueChange={setQuery}
+              aria-label={t`Tìm skill`}
+              placeholder={t`Tìm theo tên`}
+            />
+            <CommandList label={t`Danh sách skill`} className="rk-scroll max-h-72">
+              <CommandEmpty>
+                {library.length === 0 ? (
+                  <Trans>Chưa có skill nào. Thêm ở Settings → Danh sách skill.</Trans>
+                ) : (
+                  <Trans>Không có skill nào khớp</Trans>
+                )}
+              </CommandEmpty>
+              {matches.map((entry) => (
+                <CommandItem
+                  key={entry.id}
+                  value={entry.id}
+                  data-checked={isPicked(entry)}
+                  disabled={pending.has(entry.id)}
+                  onSelect={() => void toggle(entry)}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate" dir="auto">
+                      {entry.name}
+                    </span>
+                    <span className="block truncate text-[12px] text-muted-foreground" dir="auto">
+                      {entry.description}
+                    </span>
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {listQuery.isPending ? <Skeleton className="mt-2 h-10 w-full" /> : null}
+      {!listQuery.isPending && picked.length === 0 ? (
+        <div className="pt-3 text-[13.5px] text-muted-foreground">
+          <Trans>Chưa chọn skill nào</Trans>
+        </div>
+      ) : null}
+      {picked.length > 0 ? (
+        <ul className="pt-2">
+          {picked.map((entry) => (
+            <li key={entry.id} className="flex min-h-11 items-center gap-2 py-1.5">
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="min-w-0 truncate text-[14px] text-foreground" dir="auto">
+                    {entry.name}
+                  </span>
+                  <SkillSourceBadge source={entry.source} />
+                </span>
+                <span className="block truncate text-[12.5px] text-muted-foreground" dir="auto">
+                  {entry.description}
+                </span>
+              </span>
+              {entry.source === "user" ? (
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  type="button"
+                  disabled={pending.has(entry.id)}
+                  aria-label={t`Bỏ ${entry.name}`}
+                  title={t`Bỏ ${entry.name}`}
+                  onClick={() => void toggle(entry)}
+                >
+                  <X className="size-4" />
+                </Button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {companyDocCount > 0 ? (
+        <div className="pt-2 text-[12.5px] text-muted-foreground">
+          <Trans>Cùng {companyDocCount} tài liệu công ty, bot nào cũng đọc được.</Trans>
         </div>
       ) : null}
     </div>

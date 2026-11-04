@@ -4,6 +4,7 @@ const SETTINGS_SECTIONS = [
   "models",
   "memory",
   "company-docs",
+  "skills",
   "voice",
   "confirmations",
   "vault",

@@ -38,24 +38,62 @@ vi.mock("@lingui/react/macro", () => {
 vi.mock("@rakazo/ui-web", () => {
   const Container = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
-    Button: ({ variant: _variant, ...props }: ComponentProps<"button"> & { variant?: string }) => (
-      <button {...props} />
-    ),
-    Textarea: (props: ComponentProps<"textarea">) => <textarea {...props} />,
-    Checkbox: ({
-      checked,
-      onCheckedChange,
+    Button: ({
+      variant: _variant,
+      size: _size,
       ...props
-    }: Omit<ComponentProps<"input">, "checked"> & {
-      checked?: boolean;
-      onCheckedChange?: (checked: boolean) => void;
+    }: ComponentProps<"button"> & { variant?: string; size?: string }) => <button {...props} />,
+    Textarea: (props: ComponentProps<"textarea">) => <textarea {...props} />,
+    // The picker's popover renders inline; its search box and options are plain elements.
+    Popover: Container,
+    PopoverTrigger: ({ children, ...props }: ComponentProps<"button">) => (
+      <button type="button" {...props}>
+        {children}
+      </button>
+    ),
+    PopoverContent: Container,
+    Command: Container,
+    CommandList: Container,
+    CommandEmpty: ({ children }: { children?: ReactNode }) => (
+      <div data-testid="command-empty">{children}</div>
+    ),
+    CommandInput: ({
+      value,
+      onValueChange,
+      placeholder,
+    }: {
+      value?: string;
+      onValueChange?: (value: string) => void;
+      placeholder?: string;
     }) => (
       <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onCheckedChange?.(event.target.checked)}
-        {...props}
+        aria-label="skill-search"
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onValueChange?.(event.target.value)}
       />
+    ),
+    CommandItem: ({
+      children,
+      onSelect,
+      disabled,
+      "data-checked": checked,
+    }: {
+      children?: ReactNode;
+      onSelect?: () => void;
+      disabled?: boolean;
+      "data-checked"?: boolean;
+    }) => (
+      <div
+        role="option"
+        aria-selected={checked}
+        aria-disabled={disabled}
+        tabIndex={-1}
+        onClick={() => onSelect?.()}
+        onKeyDown={() => undefined}
+      >
+        {children}
+      </div>
     ),
     Skeleton: Container,
     Tabs: Container,
@@ -68,7 +106,7 @@ vi.mock("@rakazo/ui-web", () => {
 
 import { downloadArtifactBytes } from "../lib/artifact-open";
 import { spaceQueries } from "../lib/query";
-import { CompanyDocsSection, KnowledgeSection } from "./KnowledgeSection";
+import { CompanyDocsSection, KnowledgeSection, SkillLibrarySection } from "./KnowledgeSection";
 
 const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 let queryClient = newClient();
@@ -115,7 +153,7 @@ it("disables skill rows while a completed save is refreshing the catalog", async
     return found;
   };
   try {
-    await show(root, <KnowledgeSection botId="bot-fixture" skillsOnly />);
+    await show(root, <SkillLibrarySection />);
     await act(async () => button("New skill").click());
     await act(async () => button("Save").click());
     expect(api.create).toHaveBeenCalledOnce();
@@ -137,7 +175,7 @@ it("disables skill rows while a completed save is refreshing the catalog", async
   }
 });
 
-it("labels the skills group and badges built-in and plugin skills", async () => {
+it("badges built-in and plugin skills in the library and opens them read-only", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const catalog: AgentSkillCatalogEntry[] = [
     {
@@ -181,8 +219,7 @@ it("labels the skills group and badges built-in and plugin skills", async () => 
     return found;
   };
   try {
-    await show(root, <KnowledgeSection botId="bot-fixture" skillsOnly />);
-    expect(container.textContent).toContain("Skills");
+    await show(root, <SkillLibrarySection />);
     expect(button("Interrogate").textContent).toContain("Built-in");
     expect(button("Triage mail").textContent).toContain("Plugin");
     expect(button("greeting").textContent).not.toContain("Built-in");
@@ -425,7 +462,7 @@ it("opens skills from the composer's cached list and saves back into it", async 
   const button = (text: string) =>
     [...host.querySelectorAll("button")].find((node) => node.textContent?.includes(text));
   try {
-    await show(root, <KnowledgeSection botId="fixture" skillsOnly />);
+    await show(root, <SkillLibrarySection />);
     expect(button("cached-skill")).toBeTruthy();
     expect(api.list).toHaveBeenCalledTimes(1);
     await act(async () => button("New skill")!.click());
@@ -462,7 +499,7 @@ it("imports SKILL.md files, replacing a writable skill with the same name", asyn
   document.body.append(container);
   const root = createRoot(container);
   try {
-    await show(root, <KnowledgeSection botId="bot-fixture" skillsOnly />);
+    await show(root, <SkillLibrarySection />);
     const input = container.querySelector<HTMLInputElement>("[data-testid=skill-import-input]");
     if (!input) throw new Error("Missing import input");
     Object.defineProperty(input, "files", {
@@ -479,7 +516,7 @@ it("imports SKILL.md files, replacing a writable skill with the same name", asyn
     expect(api.create).toHaveBeenCalledWith({
       content: caption,
       scope: "bot",
-      botIds: ["bot-fixture"],
+      botIds: [],
     });
     expect(container.textContent).toContain("notes.pdf: only .md and .zip files are supported");
   } finally {
@@ -519,36 +556,105 @@ const scopedCatalog: AgentSkillCatalogEntry[] = [
   },
 ];
 
-it("lets a bot apply skills from the private library, leaving company docs out", async () => {
+it("lets a bot pick skills from the library in a searchable list that stays in place", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  api.list.mockResolvedValue(scopedCatalog);
+  const catalog: AgentSkillCatalogEntry[] = [
+    ...scopedCatalog,
+    {
+      id: "price-vi",
+      name: "Bảng giá dịch vụ",
+      description: "Quote in VND",
+      source: "user",
+      readOnly: false,
+      scope: "bot",
+      botIds: [],
+    },
+  ];
+  api.list.mockResolvedValue(catalog);
   api.setBotAssignment.mockImplementation(async ({ skillId, botId, assigned }) => {
-    const entry = scopedCatalog.find((item) => item.id === skillId);
+    const entry = catalog.find((item) => item.id === skillId);
     return { ...entry, botIds: assigned ? [...(entry?.botIds ?? []), botId] : [] };
   });
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
-  const checkbox = (name: string) => {
-    const found = [...container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find(
-      (input) => input.parentElement?.textContent?.includes(name),
-    );
-    if (!found) throw new Error(`Missing checkbox: ${name}`);
+  const options = () =>
+    [...container.querySelectorAll<HTMLElement>('[role="option"]')].map((option) => ({
+      name: option.textContent ?? "",
+      picked: option.getAttribute("aria-selected") === "true",
+      element: option,
+    }));
+  const option = (name: string) => {
+    const found = options().find((entry) => entry.name.includes(name));
+    if (!found) throw new Error(`Missing option: ${name}`);
     return found;
+  };
+  const pickedNames = () => [...container.querySelectorAll("li")].map((row) => row.textContent);
+  const search = async (value: string) => {
+    const input = container.querySelector<HTMLInputElement>('input[aria-label="skill-search"]');
+    if (!input) throw new Error("Missing search box");
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    await act(async () => {
+      setValue?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
   };
   try {
     await show(root, <KnowledgeSection botId="writer" skillsOnly />);
     expect(container.textContent).not.toContain("KT1 Company profile");
     expect(container.textContent).toContain("Cùng 1 tài liệu công ty");
-    expect(checkbox("QT2 Monthly plan").checked).toBe(true);
-    expect(checkbox("Agency pricing").checked).toBe(false);
-    await act(async () => checkbox("Agency pricing").click());
+    expect(pickedNames()).toEqual([expect.stringContaining("QT2 Monthly plan")]);
+    const order = options().map((entry) => entry.name);
+    expect(option("QT2 Monthly plan").picked).toBe(true);
+    expect(option("Agency pricing").picked).toBe(false);
+
+    await search("bang gia");
+    expect(options().map((entry) => entry.name)).toEqual([expect.stringContaining("Bảng giá")]);
+    await search("");
+
+    await act(async () => option("Agency pricing").element.click());
     expect(api.setBotAssignment).toHaveBeenCalledWith({
       skillId: "pricing",
       botId: "writer",
       assigned: true,
     });
-    expect(checkbox("Agency pricing").checked).toBe(true);
+    expect(option("Agency pricing").picked).toBe(true);
+    expect(pickedNames().join()).toContain("Agency pricing");
+
+    const row = [...container.querySelectorAll("li")].find((entry) =>
+      entry.textContent?.includes("QT2 Monthly plan"),
+    );
+    await act(async () => row?.querySelector("button")?.click());
+    expect(api.setBotAssignment).toHaveBeenLastCalledWith({
+      skillId: "qt2",
+      botId: "writer",
+      assigned: false,
+    });
+    expect(pickedNames().join()).not.toContain("QT2 Monthly plan");
+    // Unpicking never hides or moves a skill in the list.
+    expect(option("QT2 Monthly plan").picked).toBe(false);
+    expect(options().map((entry) => entry.name)).toEqual(order);
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+    api.list.mockReset();
+    api.setBotAssignment.mockReset();
+    vi.unstubAllGlobals();
+  }
+});
+
+it("keeps the skill library in Settings, apart from company docs", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  api.list.mockResolvedValue(scopedCatalog);
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await show(root, <SkillLibrarySection />);
+    expect(container.textContent).toContain("QT2 Monthly plan");
+    expect(container.textContent).toContain("Agency pricing");
+    expect(container.textContent).not.toContain("KT1 Company profile");
+    expect(container.querySelector('[role="option"]')).toBeNull();
   } finally {
     await act(async () => root.unmount());
     container.remove();

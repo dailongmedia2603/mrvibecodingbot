@@ -13,6 +13,7 @@ import {
   KeyRound,
   MessageCircle,
   Monitor,
+  Puzzle,
   Settings,
   ShieldCheck,
   Volume2,
@@ -33,7 +34,7 @@ import {
   UsageSettingsPanel,
 } from "./AccountSettingsOverlay";
 import { BillingSettingsPanel } from "./BillingSettingsPanel";
-import { CompanyDocsSection } from "./KnowledgeSection";
+import { CompanyDocsSection, SkillLibrarySection } from "./KnowledgeSection";
 import { MemorySettingsOverlay } from "./MemorySettingsOverlay";
 import { MessagingSettingsPanel } from "./MessagingSettingsPanel";
 import { ModelSettingsOverlay } from "./ModelSettingsOverlay";
@@ -156,6 +157,7 @@ export function SettingsOverlay({
       : []),
     { id: "memory", label: t`Memory`, icon: Brain },
     { id: "company-docs", label: t`Tài liệu công ty`, icon: BookOpen },
+    { id: "skills", label: t`Danh sách skill`, icon: Puzzle },
     { id: "usage", label: t`Usage`, icon: Gauge },
     ...(showComputer ? [{ id: "computer" as const, label: t`Computer`, icon: Monitor }] : []),
     ...(billingEnabled ? [{ id: "billing" as const, label: t`Billing`, icon: CreditCard }] : []),
@@ -401,6 +403,7 @@ export function SettingsOverlay({
                   {section === "confirmations" ? <ApprovalRulesSettings scope="account" /> : null}
                   {section === "vault" ? <VaultSettings scope="account" /> : null}
                   {section === "company-docs" ? <CompanyDocsSection /> : null}
+                  {section === "skills" ? <SkillLibrarySection /> : null}
                   {section === "messaging" && messagingEnabled ? <MessagingSettingsPanel /> : null}
                   {section === "usage" ? (
                     <UsageSettingsPanel usage={usage} panelRef={usageRef} />

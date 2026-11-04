@@ -178,13 +178,18 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
   await expect(botDocEditor).toHaveValue(new RegExp(botMarker));
   await botMemory.getByRole("button", { name: "Cancel", exact: true }).click();
 
+  // A bot lists only the skills picked for it; built-ins reach every bot.
   await settings.getByRole("button", { name: "Advanced", exact: true }).click();
   const knowledge = settings.getByTestId("bot-knowledge");
-  const builtinSkill = knowledge.getByRole("button", { name: /Interrogate/ });
+  const builtinSkill = knowledge.getByRole("listitem").filter({ hasText: "Interrogate" });
   await expect(builtinSkill).toBeVisible();
   await expect(builtinSkill.getByText("Built-in", { exact: true })).toBeVisible();
-  await knowledge.getByRole("button", { name: "New skill", exact: true }).click();
-  const editor = knowledge.locator("textarea");
+
+  // Skills are written in the Settings skill library.
+  const userSettings = await openUserSettings(page, "skills");
+  const library = userSettings.getByTestId("skill-library");
+  await library.getByRole("button", { name: "New skill", exact: true }).click();
+  const editor = library.locator("textarea");
   await editor.fill(
     [
       "---",
@@ -196,23 +201,10 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
     ].join("\n"),
   );
   await captureScreenshot(page, testInfo, "81-knowledge-skill-editor");
-  await knowledge.getByRole("button", { name: "Save", exact: true }).click();
-  const skillRow = knowledge.getByRole("button", { name: /greet-politely/ });
+  await library.getByRole("button", { name: "Save", exact: true }).click();
+  const skillRow = library.getByRole("button", { name: /greet-politely/ });
   await expect(skillRow).toBeVisible();
-  await expect(knowledge.getByText("Say hello before anything else.")).toBeVisible();
-  await expect(builtinSkill.getByText("Built-in", { exact: true })).toBeVisible();
-  const listedShot = testInfo.outputPath("82-knowledge-skill-listed.png");
-  await knowledge.screenshot({ animations: "disabled", caret: "hide", path: listedShot });
-  await testInfo.attach("82-knowledge-skill-listed", {
-    contentType: "image/png",
-    path: listedShot,
-  });
-  const composer = page.getByRole("combobox", { name: /^Message/ });
-  await composer.fill("/");
-  await expect(
-    page.getByRole("button", { name: "Skill greet-politely", exact: true }),
-  ).toBeVisible();
-  await composer.fill("");
+  await expect(library.getByText("Say hello before anything else.")).toBeVisible();
 
   // A provider-owned skill uses the same viewer without mutation controls.
   await page.route(
@@ -229,10 +221,10 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
   );
   await skillRow.click();
   await expect(editor).toHaveAttribute("readonly", "");
-  await expect(knowledge.getByText("Plugin", { exact: true })).toBeVisible();
-  await expect(knowledge.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
-  await expect(knowledge.getByRole("button", { name: "Delete", exact: true })).toHaveCount(0);
-  await knowledge.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(library.getByText("Plugin", { exact: true })).toBeVisible();
+  await expect(library.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
+  await expect(library.getByRole("button", { name: "Delete", exact: true })).toHaveCount(0);
+  await library.getByRole("button", { name: "Close", exact: true }).click();
   await skillRow.click();
   await expect(editor).toHaveValue(/Always open with a greeting/);
   await editor.fill(
@@ -257,7 +249,7 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
     },
     { times: 1 },
   );
-  await knowledge.getByRole("button", { name: "Save", exact: true }).click();
+  await library.getByRole("button", { name: "Save", exact: true }).click();
   try {
     await expect(editor).toBeHidden();
     await expect(skillRow).toBeDisabled();
@@ -265,11 +257,47 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
   } finally {
     releaseSkillRefresh();
   }
+  await expect(skillRow).toBeEnabled();
+  await page.getByLabel("Close user settings").click();
+
+  // A library skill reaches a bot only once the bot picks it.
+  const composer = page.getByRole("combobox", { name: /^Message/ });
+  await composer.fill("/");
+  await expect(page.getByRole("button", { name: "Skill greet-politely", exact: true })).toHaveCount(
+    0,
+  );
+  await composer.fill("");
+  await knowledge.getByRole("combobox", { name: "Chọn skill", exact: true }).click();
+  await page.getByRole("combobox", { name: "Tìm skill", exact: true }).fill("greet");
+  await page.getByRole("option", { name: /greet-politely/ }).click();
+  await expect(page.getByRole("option", { name: /greet-politely/ })).toHaveAttribute(
+    "data-checked",
+    "true",
+  );
+  await page.keyboard.press("Escape");
+  const pickedSkill = knowledge.getByRole("listitem").filter({ hasText: "greet-politely" });
+  await expect(pickedSkill).toBeVisible();
+  const listedShot = testInfo.outputPath("82-knowledge-skill-listed.png");
+  await knowledge.screenshot({ animations: "disabled", caret: "hide", path: listedShot });
+  await testInfo.attach("82-knowledge-skill-listed", {
+    contentType: "image/png",
+    path: listedShot,
+  });
+  await composer.fill("/");
+  await expect(
+    page.getByRole("button", { name: "Skill greet-politely", exact: true }),
+  ).toBeVisible();
+  await composer.fill("");
+
+  // Deleting it from the library removes it from the bot too.
+  await openUserSettings(page, "skills");
   await skillRow.click();
   await expect(editor).toHaveValue(/warm greeting/);
-  await knowledge.getByRole("button", { name: "Delete", exact: true }).click();
-  await knowledge.getByRole("button", { name: "Confirm delete", exact: true }).click();
+  await library.getByRole("button", { name: "Delete", exact: true }).click();
+  await library.getByRole("button", { name: "Confirm delete", exact: true }).click();
   await expect(skillRow).toBeHidden();
+  await page.getByLabel("Close user settings").click();
+  await expect(pickedSkill).toHaveCount(0);
   await composer.fill("/");
   await expect(page.getByRole("button", { name: "Skill greet-politely", exact: true })).toHaveCount(
     0,

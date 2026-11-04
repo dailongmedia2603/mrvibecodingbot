@@ -188,6 +188,7 @@ export async function openUserSettings(
     | "general"
     | "models"
     | "memory"
+    | "skills"
     | "voice"
     | "vault"
     | "usage"

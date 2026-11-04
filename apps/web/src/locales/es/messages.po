@@ -738,11 +738,6 @@ msgstr ""
 msgid "Any model, with your own key"
 msgstr ""
 
-#. placeholder {0}: entry.name
-#: src/pages/KnowledgeSection.tsx
-msgid "Áp dụng {0} cho bot này"
-msgstr ""
-
 #: src/components/AskCard.tsx
 #: src/lib/localized-provider-hint.ts
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
@@ -947,6 +942,11 @@ msgstr "Bloquear"
 msgid "Blocked"
 msgstr ""
 
+#. placeholder {0}: entry.name
+#: src/pages/KnowledgeSection.tsx
+msgid "Bỏ {0}"
+msgstr ""
+
 #: src/components/SidebarFooter.tsx
 #: src/pages/Board.tsx
 msgid "Board"
@@ -975,6 +975,10 @@ msgstr "Bot"
 #: src/lib/browser-notifications.ts
 msgid "Bot"
 msgstr "Bot"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Bot chỉ dùng những skill được chọn trong phần Skills của bot đó."
+msgstr ""
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Bot is watching, not acting"
@@ -1215,6 +1219,10 @@ msgstr "Comprobando…"
 msgid "Chép lệnh"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Chọn skill"
+msgstr ""
+
 #: src/pages/shell/agent-import.tsx
 msgid "Choose a bot"
 msgstr "Elige un bot"
@@ -1255,15 +1263,23 @@ msgid "Choose how to use Rakazo"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
+msgid "Chưa chọn skill nào"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chưa có skill nào. Thêm ở Settings → Danh sách skill."
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 msgid "Chưa có tài liệu nào"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Chuyển sang Tài liệu công ty"
+msgid "Chuyển sang Danh sách skill"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Chuyển về Skills riêng"
+msgid "Chuyển sang Tài liệu công ty"
 msgstr ""
 
 #: src/lib/localized-provider-hint.ts
@@ -2244,6 +2260,11 @@ msgstr "Personalizar avatar del bot"
 msgid "Đã chép"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Danh sách skill"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Dark"
 msgstr "Oscuro"
@@ -3202,6 +3223,10 @@ msgstr "Se conserva"
 #: src/pages/RoutineEditor.tsx
 msgid "key"
 msgstr "Clave"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Không có skill nào khớp"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Language"
@@ -5127,10 +5152,6 @@ msgid "Skill {position}"
 msgstr "Habilidad {position}"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Skill áp dụng"
-msgstr ""
-
-#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Skills"
 msgstr "Habilidades"
@@ -5638,6 +5659,14 @@ msgstr ""
 #: src/lib/cron.ts
 msgid "Thursday"
 msgstr "jueves"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Tìm skill"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Tìm theo tên"
+msgstr ""
 
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"

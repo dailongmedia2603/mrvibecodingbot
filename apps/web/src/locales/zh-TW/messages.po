@@ -739,11 +739,6 @@ msgstr "Anthropic API"
 msgid "Any model, with your own key"
 msgstr "使用自己的金鑰連接任何模型"
 
-#. placeholder {0}: entry.name
-#: src/pages/KnowledgeSection.tsx
-msgid "Áp dụng {0} cho bot này"
-msgstr ""
-
 #: src/components/AskCard.tsx
 #: src/lib/localized-provider-hint.ts
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
@@ -948,6 +943,11 @@ msgstr "封鎖"
 msgid "Blocked"
 msgstr "受阻"
 
+#. placeholder {0}: entry.name
+#: src/pages/KnowledgeSection.tsx
+msgid "Bỏ {0}"
+msgstr ""
+
 #: src/components/SidebarFooter.tsx
 #: src/pages/Board.tsx
 msgid "Board"
@@ -976,6 +976,10 @@ msgstr "機器人"
 #: src/lib/browser-notifications.ts
 msgid "Bot"
 msgstr "機器人"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Bot chỉ dùng những skill được chọn trong phần Skills của bot đó."
+msgstr ""
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Bot is watching, not acting"
@@ -1216,6 +1220,10 @@ msgstr "正在檢查…"
 msgid "Chép lệnh"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+msgid "Chọn skill"
+msgstr ""
+
 #: src/pages/shell/agent-import.tsx
 msgid "Choose a bot"
 msgstr "選擇機器人"
@@ -1256,15 +1264,23 @@ msgid "Choose how to use Rakazo"
 msgstr "選擇 Rakazo 的使用方式"
 
 #: src/pages/KnowledgeSection.tsx
+msgid "Chưa chọn skill nào"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Chưa có skill nào. Thêm ở Settings → Danh sách skill."
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
 msgid "Chưa có tài liệu nào"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Chuyển sang Tài liệu công ty"
+msgid "Chuyển sang Danh sách skill"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Chuyển về Skills riêng"
+msgid "Chuyển sang Tài liệu công ty"
 msgstr ""
 
 #: src/lib/localized-provider-hint.ts
@@ -2245,6 +2261,11 @@ msgstr "自訂機器人頭像"
 msgid "Đã chép"
 msgstr ""
 
+#: src/pages/KnowledgeSection.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Danh sách skill"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Dark"
 msgstr "深色"
@@ -3203,6 +3224,10 @@ msgstr "已保留"
 #: src/pages/RoutineEditor.tsx
 msgid "key"
 msgstr "金鑰"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Không có skill nào khớp"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Language"
@@ -5128,10 +5153,6 @@ msgid "Skill {position}"
 msgstr "技能 {position}"
 
 #: src/pages/KnowledgeSection.tsx
-msgid "Skill áp dụng"
-msgstr ""
-
-#: src/pages/KnowledgeSection.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Skills"
 msgstr "技能"
@@ -5639,6 +5660,14 @@ msgstr "本週"
 #: src/lib/cron.ts
 msgid "Thursday"
 msgstr "週四"
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Tìm skill"
+msgstr ""
+
+#: src/pages/KnowledgeSection.tsx
+msgid "Tìm theo tên"
+msgstr ""
 
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"

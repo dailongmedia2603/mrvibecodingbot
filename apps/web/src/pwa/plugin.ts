@@ -17,8 +17,8 @@ export function webManifest() {
   }));
   return {
     id: "/",
-    name: "Rakazo",
-    short_name: "Rakazo",
+    name: "1 Business Agent",
+    short_name: "1 Business",
     description: "Your team of always-on agents.",
     start_url: "/",
     scope: "/",
